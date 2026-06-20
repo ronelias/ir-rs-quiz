@@ -420,6 +420,14 @@ def frag_watch(expected_phase: str, expected_q_idx: int = -1):
         st.rerun()
 
 
+@st.fragment(run_every=3)
+def frag_wait_for_new_game():
+    """Late-joiner watcher — only reruns when game resets to lobby."""
+    s = get_state(get_conn())
+    if s["phase"] == "lobby":
+        st.rerun()
+
+
 # ── SHARED UI HELPERS ─────────────────────────────────────────────────────────
 def render_distribution(all_ans, opts, correct):
     total  = max(len(all_ans), 1)
@@ -431,12 +439,22 @@ def render_distribution(all_ans, opts, correct):
         n        = counts.get(i + 1, 0)
         pct      = int(n / total * 100)
         is_right = (i + 1) == correct
-        border   = "border:2px solid white;" if is_right else ""
+        border   = "outline:2px solid white;outline-offset:-2px;" if is_right else ""
         check    = " ✅" if is_right else ""
+        bar_w    = max(pct, 2)
+        # Label is absolutely positioned at full container width so it's
+        # always fully readable even when the vote bar is very narrow (0 votes).
         st.markdown(
-            f'<div class="dist-bar-wrap">'
-            f'<div class="dist-bar" style="background:{color};width:{max(pct,4)}%;{border}">'
-            f'{shape} {opt[:42]}{check} &nbsp;({n})'
+            f'<div style="margin:5px 0;">'
+            f'<div style="position:relative;height:44px;background:#1a1a3a;'
+            f'border-radius:8px;overflow:hidden;{border}">'
+            f'<div style="position:absolute;top:0;left:0;height:100%;width:{bar_w}%;'
+            f'background:{color};transition:width 0.7s ease;border-radius:8px;"></div>'
+            f'<div style="position:absolute;top:0;left:0;right:0;height:100%;'
+            f'display:flex;align-items:center;padding:0 14px;color:white;'
+            f'font-weight:700;font-size:0.9rem;gap:6px;">'
+            f'{shape} {opt}{check} &nbsp;<span style="opacity:0.8">({n})</span>'
+            f'</div>'
             f'</div></div>',
             unsafe_allow_html=True,
         )
@@ -553,7 +571,7 @@ def inject_css():
     }
     .explanation {
         border-left: 4px solid #1368ce; background: rgba(19,104,206,0.15);
-        color: #111111; padding: 14px 18px; border-radius: 0 10px 10px 0;
+        color: #ffffff; padding: 14px 18px; border-radius: 0 10px 10px 0;
         margin-top: 16px; margin-bottom: 8px; font-size: 0.98rem; line-height: 1.6;
     }
     .dist-bar-wrap { margin: 5px 0; border-radius: 8px; overflow: hidden; background: #1a1a3a; }
@@ -798,7 +816,7 @@ def main():
             s = get_state(conn)
             if s["phase"] != "lobby":
                 st.warning("🎮 A game is in progress. Please wait for the next round!")
-                frag_watch("ended")   # polls until game ends and resets
+                frag_wait_for_new_game()   # polls until game resets to lobby
                 return
             st.markdown("### Enter your name to join")
             name_input = st.text_input("Your name", max_chars=20, placeholder="e.g. Alice")
