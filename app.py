@@ -599,8 +599,8 @@ def inject_css():
     /* ── Explanation callout ── */
     .explanation {
         border-left: 4px solid #1368ce;
-        background: rgba(19,104,206,0.12);
-        color: #c0d8ff;
+        background: rgba(19,104,206,0.25);
+        color: #ffffff;
         padding: 14px 18px;
         border-radius: 0 10px 10px 0;
         margin-top: 16px;
