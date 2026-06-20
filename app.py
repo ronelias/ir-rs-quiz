@@ -371,14 +371,8 @@ def calc_pts(remaining):
 
 # ── SHARED RENDERING HELPERS ──────────────────────────────────────────────────
 def render_timer(remaining):
-    """Large coloured countdown + animated progress bar."""
     pct = remaining / QUESTION_TIME
-    if pct > 0.5:
-        color = "#26890c"
-    elif pct > 0.25:
-        color = "#d89e00"
-    else:
-        color = "#e21b3c"
+    color = "#26890c" if pct > 0.5 else ("#d89e00" if pct > 0.25 else "#e21b3c")
     bar_w = int(pct * 100)
     st.markdown(
         f'<div class="timer-num" style="color:{color}">{int(remaining)}</div>'
@@ -390,7 +384,6 @@ def render_timer(remaining):
 
 
 def render_distribution(all_ans, opts, correct):
-    """Coloured horizontal bars showing answer distribution after reveal."""
     total  = max(len(all_ans), 1)
     counts = {i: 0 for i in range(1, 5)}
     for a in all_ans:
@@ -414,7 +407,6 @@ def render_distribution(all_ans, opts, correct):
 
 
 def render_explanation(explanation):
-    """Blue-bordered callout with the answer explanation."""
     st.markdown(
         f'<div class="explanation">💡 {explanation}</div>',
         unsafe_allow_html=True,
@@ -422,7 +414,6 @@ def render_explanation(explanation):
 
 
 def render_leaderboard(players, highlight_name=None, max_rows=10):
-    """Styled leaderboard rows, optional player row highlight."""
     medals = ["🥇", "🥈", "🥉"]
     golds  = ["#b8860b", "#707070", "#7a4e2d"]
     for i, p in enumerate(players[:max_rows]):
@@ -437,22 +428,26 @@ def render_leaderboard(players, highlight_name=None, max_rows=10):
 
 
 def render_podium(players):
-    """Top-3 podium block for the end screen."""
     if len(players) < 1:
         return
-    order = []
-    if len(players) >= 2:
-        order = [players[1], players[0]] + ([players[2]] if len(players) >= 3 else [])
-    else:
+    if len(players) == 1:
         order = [players[0]]
-    heights  = ["130px", "170px", "100px"]
-    medals   = ["🥈", "🥇", "🥉"]
-    bg_cols  = ["#707070", "#b8860b", "#7a4e2d"]
+        heights  = ["170px"]
+        medals   = ["🥇"]
+        bg_cols  = ["#b8860b"]
+    elif len(players) == 2:
+        order    = [players[1], players[0]]
+        heights  = ["130px", "170px"]
+        medals   = ["🥈", "🥇"]
+        bg_cols  = ["#707070", "#b8860b"]
+    else:
+        order    = [players[1], players[0], players[2]]
+        heights  = ["130px", "170px", "100px"]
+        medals   = ["🥈", "🥇", "🥉"]
+        bg_cols  = ["#707070", "#b8860b", "#7a4e2d"]
+
     html = '<div class="podium">'
-    for idx, p in enumerate(order):
-        h  = heights[idx]
-        m  = medals[idx]
-        bg = bg_cols[idx]
+    for p, h, m, bg in zip(order, heights, medals, bg_cols):
         html += (
             f'<div class="podium-block" style="background:{bg};height:{h}">'
             f'<div style="font-size:2rem">{m}</div>'
@@ -470,16 +465,13 @@ def inject_css():
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap');
 
-    /* ── Global typography ── */
     html, body, [class*="css"], h1, h2, h3, p, div, button, input {
         font-family: 'Nunito', sans-serif !important;
     }
 
-    /* ── Hide Streamlit chrome ── */
     #MainMenu, footer, header { visibility: hidden; }
     [data-testid="stToolbar"] { display: none; }
 
-    /* ── Question box ── */
     .q-box {
         background: #1e1e4a;
         color: white;
@@ -493,7 +485,6 @@ def inject_css():
         box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
 
-    /* ── Question badge ── */
     .q-badge {
         display: inline-block;
         background: #1368ce;
@@ -506,7 +497,6 @@ def inject_css():
         letter-spacing: 0.5px;
     }
 
-    /* ── Timer ── */
     .timer-num {
         font-size: 3.5rem;
         font-weight: 800;
@@ -528,61 +518,35 @@ def inject_css():
         transition: width 1s linear, background 0.5s;
     }
 
-    /* ── Answer buttons — colour by column position ── */
     div[data-testid="column"]:nth-of-type(1) button {
-        background: #e21b3c !important;
-        color: white !important;
-        min-height: 100px !important;
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        border-radius: 10px !important;
-        white-space: normal !important;
-        word-wrap: break-word;
-        letter-spacing: 0.3px;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(226,27,60,0.4) !important;
+        background: #e21b3c !important; color: white !important;
+        min-height: 100px !important; font-size: 1rem !important;
+        font-weight: 700 !important; border-radius: 10px !important;
+        white-space: normal !important; word-wrap: break-word;
+        border: none !important; box-shadow: 0 4px 12px rgba(226,27,60,0.4) !important;
     }
     div[data-testid="column"]:nth-of-type(2) button {
-        background: #1368ce !important;
-        color: white !important;
-        min-height: 100px !important;
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        border-radius: 10px !important;
-        white-space: normal !important;
-        word-wrap: break-word;
-        letter-spacing: 0.3px;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(19,104,206,0.4) !important;
+        background: #1368ce !important; color: white !important;
+        min-height: 100px !important; font-size: 1rem !important;
+        font-weight: 700 !important; border-radius: 10px !important;
+        white-space: normal !important; word-wrap: break-word;
+        border: none !important; box-shadow: 0 4px 12px rgba(19,104,206,0.4) !important;
     }
     div[data-testid="column"]:nth-of-type(3) button {
-        background: #d89e00 !important;
-        color: white !important;
-        min-height: 100px !important;
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        border-radius: 10px !important;
-        white-space: normal !important;
-        word-wrap: break-word;
-        letter-spacing: 0.3px;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(216,158,0,0.4) !important;
+        background: #d89e00 !important; color: white !important;
+        min-height: 100px !important; font-size: 1rem !important;
+        font-weight: 700 !important; border-radius: 10px !important;
+        white-space: normal !important; word-wrap: break-word;
+        border: none !important; box-shadow: 0 4px 12px rgba(216,158,0,0.4) !important;
     }
     div[data-testid="column"]:nth-of-type(4) button {
-        background: #26890c !important;
-        color: white !important;
-        min-height: 100px !important;
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        border-radius: 10px !important;
-        white-space: normal !important;
-        word-wrap: break-word;
-        letter-spacing: 0.3px;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(38,137,12,0.4) !important;
+        background: #26890c !important; color: white !important;
+        min-height: 100px !important; font-size: 1rem !important;
+        font-weight: 700 !important; border-radius: 10px !important;
+        white-space: normal !important; word-wrap: break-word;
+        border: none !important; box-shadow: 0 4px 12px rgba(38,137,12,0.4) !important;
     }
 
-    /* ── Locked-in card ── */
     .locked-card {
         background: rgba(38,137,12,0.15);
         border: 2px solid #26890c;
@@ -596,11 +560,10 @@ def inject_css():
         box-shadow: 0 0 30px rgba(38,137,12,0.2);
     }
 
-    /* ── Explanation callout ── */
     .explanation {
         border-left: 4px solid #1368ce;
-        background: rgba(19,104,206,0.25);
-        color: #ffffff;
+        background: rgba(19,104,206,0.15);
+        color: #111111;
         padding: 14px 18px;
         border-radius: 0 10px 10px 0;
         margin-top: 16px;
@@ -609,7 +572,6 @@ def inject_css():
         line-height: 1.6;
     }
 
-    /* ── Distribution bars ── */
     .dist-bar-wrap {
         margin: 5px 0;
         border-radius: 8px;
@@ -633,50 +595,28 @@ def inject_css():
         text-overflow: ellipsis;
     }
 
-    /* ── Leaderboard rows ── */
     .lb {
-        padding: 12px 20px;
-        margin: 5px 0;
-        border-radius: 10px;
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #ffffff;
+        padding: 12px 20px; margin: 5px 0; border-radius: 10px;
+        font-size: 1.05rem; font-weight: 700; color: #ffffff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    .lb-me {
-        outline: 2px solid #1368ce;
-        outline-offset: 2px;
-    }
+    .lb-me { outline: 2px solid #1368ce; outline-offset: 2px; }
 
-    /* ── Podium ── */
     .podium {
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        gap: 14px;
-        margin: 28px 0 8px 0;
+        display: flex; align-items: flex-end; justify-content: center;
+        gap: 14px; margin: 28px 0 8px 0;
     }
     .podium-block {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        border-radius: 10px 10px 0 0;
-        color: white;
-        font-weight: 700;
-        text-align: center;
-        padding: 14px 22px;
-        min-width: 110px;
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: flex-end; border-radius: 10px 10px 0 0;
+        color: white; font-weight: 700; text-align: center;
+        padding: 14px 22px; min-width: 110px;
         box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
     }
 
-    /* ── Join page subtitle ── */
     .subtitle {
-        color: #8888bb;
-        font-size: 0.95rem;
-        margin-top: -12px;
-        margin-bottom: 24px;
-        text-align: center;
+        color: #8888bb; font-size: 0.95rem;
+        margin-top: -12px; margin-bottom: 24px; text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -684,35 +624,40 @@ def inject_css():
 
 # ── HOST VIEWS ────────────────────────────────────────────────────────────────
 def host_lobby(conn):
-    st.title("🎯 IR & RS Quiz — Host Panel")
-    players = get_players(conn)
+    page = st.empty()
+    with page.container():
+        st.title("🎯 IR & RS Quiz — Host Panel")
+        players = get_players(conn)
 
-    col_info, col_count = st.columns([3, 1])
-    with col_info:
-        st.markdown("Share the **player URL** (without `?host=true`) with your students.")
-    with col_count:
-        st.metric("Players joined", len(players))
+        c_info, c_count = st.columns([3, 1])
+        with c_info:
+            st.markdown("Share the **player URL** (without `?host=true`) with your students.")
+        with c_count:
+            st.metric("Players joined", len(players))
 
-    if players:
-        cols = st.columns(4)
-        for i, p in enumerate(players):
-            with cols[i % 4]:
-                st.markdown(f"✅ **{p['name']}**")
-    else:
-        st.info("⏳ Waiting for students to join…")
+        if players:
+            cols = st.columns(4)
+            for i, p in enumerate(players):
+                with cols[i % 4]:
+                    st.markdown(f"✅ **{p['name']}**")
+        else:
+            st.info("⏳ Waiting for students to join…")
 
-    st.divider()
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("🚀 Start Game", type="primary", disabled=not players, use_container_width=True):
-            set_phase(conn, "question", q_idx=0, q_start=time.time())
-            st.rerun()
-    with c2:
-        if st.button("🔄 Reset / Clear All", use_container_width=True):
-            reset_game(conn)
-            st.rerun()
+        st.divider()
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🚀 Start Game", type="primary", disabled=not players, use_container_width=True):
+                set_phase(conn, "question", q_idx=0, q_start=time.time())
+                page.empty()
+                st.rerun()
+        with c2:
+            if st.button("🔄 Reset / Clear All", use_container_width=True):
+                reset_game(conn)
+                page.empty()
+                st.rerun()
 
     time.sleep(POLL_INTERVAL)
+    page.empty()
     st.rerun()
 
 
@@ -725,25 +670,26 @@ def host_question(conn, s):
         set_phase(conn, "results")
         st.rerun()
 
-    st.markdown(
-        f'<div class="q-badge">Q{q_idx + 1} / {len(QUESTIONS)}</div>',
-        unsafe_allow_html=True,
-    )
-    render_timer(remaining)
-    st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
+    page = st.empty()
+    with page.container():
+        st.markdown(
+            f'<div class="q-badge">Q{q_idx + 1} / {len(QUESTIONS)}</div>',
+            unsafe_allow_html=True,
+        )
+        render_timer(remaining)
+        st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
 
-    all_ans = q_answers(conn, q_idx)
-    players  = get_players(conn)
+        all_ans = q_answers(conn, q_idx)
+        st.metric("Answers received", f"{len(all_ans)} / {len(get_players(conn))}")
 
-    # ── Only show count — NO distribution during live question ────────────────
-    st.metric("Answers received", f"{len(all_ans)} / {len(players)}")
-
-    st.divider()
-    if st.button("⏭ Show Results Now", use_container_width=True):
-        set_phase(conn, "results")
-        st.rerun()
+        st.divider()
+        if st.button("⏭ Show Results Now", use_container_width=True):
+            set_phase(conn, "results")
+            page.empty()
+            st.rerun()
 
     time.sleep(POLL_INTERVAL)
+    page.empty()
     st.rerun()
 
 
@@ -751,69 +697,77 @@ def host_results(conn, s):
     q_idx                    = s["q_idx"]
     q_text, opts, correct, explanation = QUESTIONS[q_idx]
 
-    st.markdown(
-        f'<div class="q-badge">Q{q_idx + 1} / {len(QUESTIONS)} — Results</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
-    st.success(f"✅ Correct answer: **{opts[correct - 1]}**")
+    page = st.empty()
+    with page.container():
+        st.markdown(
+            f'<div class="q-badge">Q{q_idx + 1} / {len(QUESTIONS)} — Results</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
+        st.success(f"✅ Correct answer: **{opts[correct - 1]}**")
 
-    all_ans   = q_answers(conn, q_idx)
-    n_correct = sum(1 for a in all_ans if a["correct"])
+        all_ans   = q_answers(conn, q_idx)
+        n_correct = sum(1 for a in all_ans if a["correct"])
 
-    # ── Distribution + explanation (only shown now, not during question) ──────
-    render_distribution(all_ans, opts, correct)
-    render_explanation(explanation)
+        render_distribution(all_ans, opts, correct)
+        render_explanation(explanation)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
+        st.markdown("<br>", unsafe_allow_html=True)
         st.metric("Correct", f"{n_correct} / {len(all_ans)}")
 
-    if all_ans:
-        st.markdown("**This round:**")
-        for a in sorted(all_ans, key=lambda x: -x["pts"])[:8]:
-            icon = "✅" if a["correct"] else "❌"
-            st.write(f"{icon} **{a['player']}**  +{a['pts']} pts")
+        if all_ans:
+            st.markdown("**This round:**")
+            for a in sorted(all_ans, key=lambda x: -x["pts"])[:8]:
+                icon = "✅" if a["correct"] else "❌"
+                st.write(f"{icon} **{a['player']}**  +{a['pts']} pts")
 
-    st.divider()
-    st.subheader("🏆 Standings")
-    render_leaderboard(get_players(conn))
+        st.divider()
+        st.subheader("🏆 Standings")
+        render_leaderboard(get_players(conn))
 
-    st.divider()
-    is_last = (q_idx + 1) >= len(QUESTIONS)
-    if is_last:
-        if st.button("🏁 End Game", type="primary", use_container_width=True):
-            set_phase(conn, "ended")
-            st.rerun()
-    else:
-        if st.button(
-            f"▶ Next Question  ({q_idx + 2} / {len(QUESTIONS)})",
-            type="primary",
-            use_container_width=True,
-        ):
-            set_phase(conn, "question", q_idx=q_idx + 1, q_start=time.time())
-            st.rerun()
+        st.divider()
+        is_last = (q_idx + 1) >= len(QUESTIONS)
+        if is_last:
+            if st.button("🏁 End Game", type="primary", use_container_width=True):
+                set_phase(conn, "ended")
+                page.empty()
+                st.rerun()
+        else:
+            if st.button(
+                f"▶ Next Question  ({q_idx + 2} / {len(QUESTIONS)})",
+                type="primary",
+                use_container_width=True,
+            ):
+                set_phase(conn, "question", q_idx=q_idx + 1, q_start=time.time())
+                page.empty()
+                st.rerun()
 
 
 def host_ended(conn):
-    st.title("🏆 Final Results")
-    st.balloons()
-    players = get_players(conn)
-    render_podium(players)
-    render_leaderboard(players, max_rows=20)
-    st.divider()
-    if st.button("🔄 New Game", use_container_width=True):
-        reset_game(conn)
-        st.rerun()
+    page = st.empty()
+    with page.container():
+        st.title("🏆 Final Results")
+        st.balloons()
+        players = get_players(conn)
+        render_podium(players)
+        render_leaderboard(players, max_rows=len(players))
+        st.divider()
+        if st.button("🔄 New Game", use_container_width=True):
+            reset_game(conn)
+            page.empty()
+            st.rerun()
 
 
 # ── PLAYER VIEWS ──────────────────────────────────────────────────────────────
 def player_lobby(name):
-    st.title("🎯 IR & RS Quiz")
-    st.success(f"Welcome **{name}**! You're in. 👋")
-    st.info("⏳ Waiting for the host to start the game…")
+    page = st.empty()
+    with page.container():
+        st.title("🎯 IR & RS Quiz")
+        st.success(f"Welcome **{name}**! You're in. 👋")
+        st.info("⏳ Waiting for the host to start the game…")
+
     time.sleep(POLL_INTERVAL)
+    page.empty()
     st.rerun()
 
 
@@ -823,37 +777,40 @@ def player_question(conn, s, name):
     remaining          = max(0.0, QUESTION_TIME - (time.time() - s["q_start"]))
     already            = has_answered(conn, name, q_idx)
 
-    st.markdown(
-        f'<div class="q-badge">Q{q_idx + 1} / {len(QUESTIONS)}</div>',
-        unsafe_allow_html=True,
-    )
-    render_timer(remaining)
-    st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
-
-    if already:
+    page = st.empty()
+    with page.container():
         st.markdown(
-            '<div class="locked-card">✅<br>Answer locked in!<br>'
-            '<span style="font-size:1rem;font-weight:400">Waiting for results…</span></div>',
+            f'<div class="q-badge">Q{q_idx + 1} / {len(QUESTIONS)}</div>',
             unsafe_allow_html=True,
         )
-    elif remaining == 0:
-        st.warning("⏰ Time's up!")
-    else:
-        # ── The ONLY st.columns call on this page — enables colour CSS ────────
-        c1, c2, c3, c4 = st.columns(4)
-        for col, idx in zip([c1, c2, c3, c4], range(4)):
-            with col:
-                if st.button(
-                    f"{SHAPES[idx]}  {opts[idx]}",
-                    key=f"ans_{idx}",
-                    use_container_width=True,
-                ):
-                    is_correct = (idx + 1) == correct
-                    pts = calc_pts(remaining) if is_correct else 0
-                    submit_answer(conn, name, q_idx, idx + 1, is_correct, pts)
-                    st.rerun()
+        render_timer(remaining)
+        st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
+
+        if already:
+            st.markdown(
+                '<div class="locked-card">✅<br>Answer locked in!<br>'
+                '<span style="font-size:1rem;font-weight:400">Waiting for results…</span></div>',
+                unsafe_allow_html=True,
+            )
+        elif remaining == 0:
+            st.warning("⏰ Time's up!")
+        else:
+            c1, c2, c3, c4 = st.columns(4)
+            for col, idx in zip([c1, c2, c3, c4], range(4)):
+                with col:
+                    if st.button(
+                        f"{SHAPES[idx]}  {opts[idx]}",
+                        key=f"ans_{idx}",
+                        use_container_width=True,
+                    ):
+                        is_correct = (idx + 1) == correct
+                        pts = calc_pts(remaining) if is_correct else 0
+                        submit_answer(conn, name, q_idx, idx + 1, is_correct, pts)
+                        page.empty()
+                        st.rerun()
 
     time.sleep(POLL_INTERVAL)
+    page.empty()
     st.rerun()
 
 
@@ -861,47 +818,50 @@ def player_results(conn, s, name):
     q_idx                    = s["q_idx"]
     q_text, opts, correct, explanation = QUESTIONS[q_idx]
 
-    st.markdown(
-        f'<div class="q-badge">Q{q_idx + 1} — Results</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
+    page = st.empty()
+    with page.container():
+        st.markdown(
+            f'<div class="q-badge">Q{q_idx + 1} — Results</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(f'<div class="q-box">{q_text}</div>', unsafe_allow_html=True)
 
-    my_ans = conn.execute(
-        "SELECT * FROM answers WHERE player=? AND q_idx=?", (name, q_idx)
-    ).fetchone()
+        my_ans = conn.execute(
+            "SELECT * FROM answers WHERE player=? AND q_idx=?", (name, q_idx)
+        ).fetchone()
 
-    if my_ans:
-        if my_ans["correct"]:
-            st.success(f"✅ Correct!  +{my_ans['pts']} points")
-            st.balloons()
+        if my_ans:
+            if my_ans["correct"]:
+                st.success(f"✅ Correct!  +{my_ans['pts']} points")
+                st.balloons()
+            else:
+                st.error("❌ Wrong!")
+                st.info(f"Correct answer: **{opts[correct - 1]}**")
         else:
-            st.error("❌ Wrong!")
+            st.warning("⏰ You didn't answer in time.")
             st.info(f"Correct answer: **{opts[correct - 1]}**")
-    else:
-        st.warning("⏰ You didn't answer in time.")
-        st.info(f"Correct answer: **{opts[correct - 1]}**")
 
-    # ── Distribution + explanation ────────────────────────────────────────────
-    all_ans = q_answers(conn, q_idx)
-    render_distribution(all_ans, opts, correct)
-    render_explanation(explanation)
+        all_ans = q_answers(conn, q_idx)
+        render_distribution(all_ans, opts, correct)
+        render_explanation(explanation)
 
-    row     = conn.execute("SELECT score FROM players WHERE name=?", (name,)).fetchone()
-    score   = row["score"] if row else 0
-    players = get_players(conn)
-    rank    = next((i + 1 for i, p in enumerate(players) if p["name"] == name), None)
+        st.markdown("<br>", unsafe_allow_html=True)
+        row     = conn.execute("SELECT score FROM players WHERE name=?", (name,)).fetchone()
+        score   = row["score"] if row else 0
+        players = get_players(conn)
+        rank    = next((i + 1 for i, p in enumerate(players) if p["name"] == name), None)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("Your score", score)
-    with c2:
-        if rank:
-            st.metric("Your rank", f"#{rank} / {len(players)}")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("Your score", score)
+        with c2:
+            if rank:
+                st.metric("Your rank", f"#{rank} / {len(players)}")
 
-    st.info("⏳ Waiting for the host to continue…")
+        st.info("⏳ Waiting for the host to continue…")
+
     time.sleep(POLL_INTERVAL)
+    page.empty()
     st.rerun()
 
 
@@ -919,7 +879,6 @@ def player_ended(conn, name):
 
     st.metric("Final score", score)
     render_podium(players)
-
     st.divider()
     st.subheader("Final Leaderboard")
     render_leaderboard(players, highlight_name=name, max_rows=len(players))
@@ -967,7 +926,6 @@ def main():
                 '<p class="subtitle">Information Retrieval & Recommender Systems · TAU 2026</p>',
                 unsafe_allow_html=True,
             )
-
             s = get_state(conn)
             if s["phase"] != "lobby":
                 st.warning("🎮 A game is in progress. Please wait for the next round!")
